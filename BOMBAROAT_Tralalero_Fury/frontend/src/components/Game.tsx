@@ -2,42 +2,42 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import Grid from './Grid';
 import Controls from './Controls';
-import './Game.css'; // For Game component specific layout styles
-import { mockStakeWebService, _resetMockServerBalance } from '../services/StakeWebSDK'; // Import the mock SDK
+import './Game.css';
+import mockStakeWebService, { BookEntry, BookEntryEvent, _resetMockServerBalance } from '../services/StakeWebSDK';
 
-// Helper to generate a random symbol ID for placeholders
-const getRandomSymbol = () => `S${Math.floor(Math.random() * 3) + 1}`;
-
-// Initialize a 4-row, 5-column grid
+// Initialize a 4-row, 5-column grid with empty strings
 const generateInitialGrid = (): string[][] => {
   const rows = 4;
   const cols = 5;
-  return Array(rows).fill(null).map(() =>
-    Array(cols).fill(null).map(() => getRandomSymbol())
-  );
+  return Array(rows).fill(null).map(() => Array(cols).fill("")); 
 };
 
 const Game: React.FC = () => {
   const [gridData, setGridData] = useState<string[][]>(generateInitialGrid());
   const [currentBet, setCurrentBet] = useState<number>(1.00);
-  const [balance, setBalance] = useState<number>(0); // Initialized by SDK
+  const [balance, setBalance] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [user, setUser] = useState<string | null>(null);
+  
+  // New state variables
+  const [activeWins, setActiveWins] = useState<any[]>([]); // For line_wins and scatter_wins arrays
+  const [gameMode, setGameMode] = useState<string>("base"); // "base", "tralalero_free_spins", "bombardino_bonus"
+  const [featureSpinsRemaining, setFeatureSpinsRemaining] = useState<number>(0);
+  const [lastWinAmount, setLastWinAmount] = useState<number>(0);
+  const [currentTotalFeaturePayout, setCurrentTotalFeaturePayout] = useState<number>(0); // For accumulating feature wins
 
-  // Define bet limits and step (can be moved to config or constants)
   const MIN_BET = 0.10;
   const MAX_BET = 10.00;
   const BET_STEP = 0.10;
 
-  // Initialize session on component mount
   useEffect(() => {
-    _resetMockServerBalance(1000.00); // Ensure consistent starting balance for mock
+    _resetMockServerBalance(1000.00); 
     setIsLoading(true);
     mockStakeWebService.initializeSession()
       .then(sessionData => {
         setBalance(sessionData.balance);
         setUser(sessionData.user);
-        console.log("Session initialized for user:", sessionData.user);
+        console.log("Session initialized for user:", sessionData.user, "Balance:", sessionData.balance);
       })
       .catch(error => {
         console.error("Failed to initialize session:", error);
@@ -46,62 +46,110 @@ const Game: React.FC = () => {
       .finally(() => {
         setIsLoading(false);
       });
-  }, []); // Empty dependency array means this runs once on mount
+  }, []);
+
+  const processSpinEvents = (bookEntry: BookEntry) => {
+    console.log("[Game.tsx] Processing spin events for bookEntry:", bookEntry);
+    setActiveWins([]); // Clear previous wins first
+    let currentSpinWin = 0;
+
+    for (const event of bookEntry.events) {
+      if (event.type === "grid_reveal" && event.grid) { // Updated from "reveal"
+        console.log("[Game.tsx] Grid Reveal event, updating grid:", event.grid);
+        setGridData(event.grid);
+      } else if (event.type === "wins_info" && event.line_wins !== undefined && event.scatter_wins !== undefined) { // Updated from "winInfo"
+        console.log("[Game.tsx] Wins Info event:", event);
+        const allWins = [...(event.line_wins || []), ...(event.scatter_wins || [])];
+        setActiveWins(allWins);
+        // total_win_for_spin might be on the event or on the bookEntry directly
+        currentSpinWin = event.total_win_for_spin || bookEntry.payoutMultiplier * currentBet; 
+        setLastWinAmount(currentSpinWin);
+      } else if (event.type === "feature_triggers" && event.features && event.features.length > 0) { // Updated from "triggers"
+        console.log("[Game.tsx] Feature Triggers event:", event.features);
+        const triggeredFeature = event.features[0]; // Assuming one trigger per spin for now
+        alert(`Feature Triggered: ${triggeredFeature.feature_type}`);
+        
+        if (triggeredFeature.feature_type === "TRALALERO_FREE_SPINS") {
+          setGameMode("tralalero_free_spins");
+          // The number of spins will be dictated by the feature book entry from SDK
+          // For now, we can anticipate this from the trigger event if it provides a count
+          // Or wait for the first feature spin's book entry.
+          // Let's assume the feature book entry will provide `total_spins_in_feature` or similar.
+          // For now, we just set the mode. `featureSpinsRemaining` will be set by the feature book.
+          setCurrentTotalFeaturePayout(0); // Reset feature payout accumulator
+        } else if (triggeredFeature.feature_type === "BOMBAROAT_BONUS") {
+          setGameMode("bombardino_bonus");
+          setCurrentTotalFeaturePayout(0); // Reset feature payout accumulator
+        }
+      }
+    }
+    // If this is a feature spin, update feature-specific state
+    if (bookEntry.mode === "tralalero_free_spins" || bookEntry.mode === "bombardino_bonus") {
+        setGameMode(bookEntry.mode); // Ensure gameMode is set to the feature's mode
+        setCurrentTotalFeaturePayout(prev => prev + currentSpinWin);
+
+        if (bookEntry.spins_played !== undefined && bookEntry.total_spins_in_feature !== undefined) {
+            setFeatureSpinsRemaining(bookEntry.total_spins_in_feature - bookEntry.spins_played);
+            if ((bookEntry.total_spins_in_feature - bookEntry.spins_played) <= 0) {
+                console.log(`[Game.tsx] ${bookEntry.mode} feature ended. Total payout: ${currentTotalFeaturePayout + currentSpinWin}`);
+                // The final payout for the feature is on the feature book entry itself (payoutMultiplier)
+                setGameMode("base"); 
+                setFeatureSpinsRemaining(0);
+                // alert(`${bookEntry.mode} feature ended. Total win: ${ (currentTotalFeaturePayout + currentSpinWin).toFixed(2)}`);
+            }
+        }
+    } else { // If it's a base game spin that didn't trigger a feature
+        if (!(bookEntry.events.some(e => e.type === "feature_triggers" && e.features && e.features.length > 0))) {
+             setGameMode("base"); // Ensure mode is reset if no trigger
+             setFeatureSpinsRemaining(0);
+        }
+    }
+  };
 
   const handleSpinClick = useCallback(async () => {
-    if (isLoading) {
-      console.log("Spin ignored, already loading/spinning.");
-      return;
-    }
-    if (balance < currentBet) {
-      alert("Not enough balance to spin!");
-      return;
-    }
+    if (isLoading) return;
+    
+    let effectiveBet = currentBet;
+    let modeToRequest = gameMode;
 
+    if (gameMode === "base") {
+        if (balance < currentBet) {
+            alert("Not enough balance to spin!");
+            return;
+        }
+    } else if (gameMode === "tralalero_free_spins" || gameMode === "bombardino_bonus") {
+        if (featureSpinsRemaining <= 0) { // Should not happen if logic is correct, but as a safeguard
+            console.log(`[Game.tsx] Attempted feature spin with 0 spins remaining. Resetting to base.`);
+            setGameMode("base");
+            modeToRequest = "base"; 
+            if (balance < currentBet) {
+                alert("Not enough balance to start a new base game spin!");
+                return;
+            }
+        } else {
+             // For feature spins, the bet amount sent to SDK might be the original triggering bet,
+             // or 0 if cost is already handled. Mock SDK now handles no-cost for feature spins.
+             effectiveBet = currentBet; // Send original bet for payout calculation reference
+        }
+    }
+    
     setIsLoading(true);
-    console.log(`Attempting to place bet: ${currentBet}`);
+    if (gameMode === "base") setActiveWins([]); // Clear wins only for new base spins
 
     try {
-      const betResponse = await mockStakeWebService.placeBet(currentBet);
-      if (betResponse.success && betResponse.newBalance !== undefined) {
-        setBalance(betResponse.newBalance); // Update balance after successful bet
-        console.log("Bet successful. New balance:", betResponse.newBalance);
+      // Pass the current gameMode if it's a feature, otherwise SDK defaults to "base"
+      const response = await mockStakeWebService.requestSpin(effectiveBet, modeToRequest);
+      console.log("[Game.tsx] Spin response from SDK:", response);
 
-        // Simulate the spin animation and outcome determination
-        // For now, just randomize the grid after a short delay
-        await new Promise(resolve => setTimeout(resolve, 300)); // Simulate spin animation time
-        const newGrid = generateInitialGrid();
-        setGridData(newGrid);
-
-        // Placeholder: Calculate win amount (replace with actual game logic later)
-        let winAmount = 0;
-        if (Math.random() > 0.5) { // 50% chance of winning for this mock
-          // Simulate a random win amount (e.g., 0.5x to 3x the bet)
-          winAmount = parseFloat((currentBet * (Math.random() * 2.5 + 0.5)).toFixed(2));
-          console.log(`Mock win calculated: ${winAmount}`);
-        } else {
-          console.log("Mock spin resulted in no win.");
-        }
-
-        // Resolve the spin with the (mock) win amount
-        const resolveResponse = await mockStakeWebService.resolveSpin(winAmount);
-        if (resolveResponse.success && resolveResponse.newBalance !== undefined) {
-          setBalance(resolveResponse.newBalance); // Update balance after win resolution
-          console.log("Spin resolved. Final balance:", resolveResponse.newBalance);
-          if (winAmount > 0) {
-            // alert(`You won: ${winAmount.toFixed(2)}!`); // Optional win alert
-          }
-        } else {
-          console.error("Failed to resolve spin:", resolveResponse.error);
-          alert(`Error resolving spin: ${resolveResponse.error}. Please check balance or try again.`);
-          // Potentially try to revert bet or fetch balance again if critical
-        }
+      if (response.success && response.bookEntry && response.newBalance !== undefined) {
+        setBalance(response.newBalance); 
+        processSpinEvents(response.bookEntry); // Process events, this will update grid, wins, mode, featureSpinsRemaining
+        setLastSpinResult(response.bookEntry);
 
       } else {
-        console.error("Failed to place bet:", betResponse.error);
-        alert(`Bet failed: ${betResponse.error}`);
-        // Refresh balance from SDK in case of desync
-        mockStakeWebService.getBalance().then(setBalance);
+        console.error("Spin request failed:", response.error);
+        alert(`Spin failed: ${response.error || "Unknown error"}`);
+        mockStakeWebService.getBalance().then(currentBal => setBalance(currentBal));
       }
     } catch (error) {
       console.error("An unexpected error occurred during spin:", error);
@@ -109,23 +157,23 @@ const Game: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [balance, currentBet, isLoading]);
+  }, [balance, currentBet, isLoading, gameMode, featureSpinsRemaining]);
 
   const handleBetIncrease = useCallback(() => {
-    if (isLoading) return;
+    if (isLoading || gameMode !== "base") return; // Allow bet changes only in base game and not loading
     setCurrentBet(prevBet => {
       const newBet = parseFloat((prevBet + BET_STEP).toFixed(2));
       return newBet <= MAX_BET ? newBet : MAX_BET;
     });
-  }, [isLoading]);
+  }, [isLoading, gameMode]);
 
   const handleBetDecrease = useCallback(() => {
-    if (isLoading) return;
+    if (isLoading || gameMode !== "base") return; // Allow bet changes only in base game and not loading
     setCurrentBet(prevBet => {
       const newBet = parseFloat((prevBet - BET_STEP).toFixed(2));
       return newBet >= MIN_BET ? newBet : MIN_BET;
     });
-  }, [isLoading]);
+  }, [isLoading, gameMode]);
 
   return (
     <div className="game-container-main">
@@ -133,17 +181,33 @@ const Game: React.FC = () => {
         <h1>BOMBAROAT™: Tralalero Fury</h1>
         {user && <p className="user-display">Player: {user}</p>}
       </header>
-      <Grid gridData={gridData} />
+      <div className="game-status-display">
+        <p>Mode: <span className="value">{gameMode}</span></p>
+        {gameMode !== "base" && <p>Feature Spins Left: <span className="value">{featureSpinsRemaining}</span></p>}
+        <p>Last Win: <span className="value">{lastWinAmount.toFixed(2)}</span></p>
+        {gameMode !== "base" && <p>Total Feature Win: <span className="value">{currentTotalFeaturePayout.toFixed(2)}</span></p>}
+      </div>
+      <Grid gridData={gridData} activeWins={activeWins} />
       <Controls
         currentBet={currentBet}
         balance={balance}
         onSpinClick={handleSpinClick}
         onBetIncrease={handleBetIncrease}
         onBetDecrease={handleBetDecrease}
-        isLoading={isLoading} // Pass isLoading to Controls
+        isLoading={isLoading}
+        isFeatureActive={gameMode !== "base"} // Disable bet controls during features
       />
       {isLoading && <div className="loading-overlay">Processing...</div>}
-      {/* TODO: Add info display for wins, messages, etc. */}
+      {lastSpinResult && (
+        <div className="spin-result-display">
+          <h3>Last Spin Result (Debug):</h3>
+          <p>ID: {lastSpinResult.id}, Mode: {lastSpinResult.mode}, PayoutMult: {lastSpinResult.payoutMultiplier}x</p>
+          <h4>Events:</h4>
+          <pre style={{textAlign: 'left', background: '#222', padding: '10px', maxHeight: '200px', overflowY: 'auto'}}>
+            {JSON.stringify(lastSpinResult.events, null, 2)}
+          </pre>
+        </div>
+      )}
     </div>
   );
 };
