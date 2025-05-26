@@ -4,19 +4,24 @@ import './Symbol.css';
 
 interface SymbolProps {
   symbolId: string;
+  isWinning?: boolean; // New prop
   // Optional: add type or other properties for styling based on symbol later
 }
 
-const SymbolDisplay: React.FC<SymbolProps> = ({ symbolId }) => {
+const SymbolDisplay: React.FC<SymbolProps> = ({ symbolId, isWinning }) => {
   // For now, just display the symbolId. Later, this could be an image or more complex rendering.
   // A real game would have a mapping from symbolId to visual asset.
   // Example: const imageSrc = symbolMap[symbolId]?.image;
   
-  // Placeholder for symbol-specific styling or image
   let symbolContent = symbolId;
   let className = "symbol-cell";
 
+  if (isWinning) {
+    className += " symbol-winning"; // Add winning class
+  }
+
   // Example: Different background for different placeholder symbols
+  // This existing logic can be kept or removed if actual image assets are planned
   if (symbolId === "S1") {
     // className += " symbol-s1"; // If you add specific styles
     symbolContent = "S1"; // Or an emoji 🍓
@@ -28,6 +33,7 @@ const SymbolDisplay: React.FC<SymbolProps> = ({ symbolId }) => {
     symbolContent = "S3"; // Or an emoji 🍉
   } else if (!symbolId || symbolId === "") {
     symbolContent = ""; // Empty cell
+    className += " symbol-empty"; // Style empty cells if needed
   }
 
 

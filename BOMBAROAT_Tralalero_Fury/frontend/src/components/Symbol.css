@@ -26,3 +26,15 @@
 }
 
 /* Add more styles for actual game symbols (H1, L1, WILD, etc.) later */
+
+.symbol-winning {
+  border: 3px solid gold; /* Example: Gold border for winning symbols */
+  box-shadow: 0 0 10px gold, 0 0 5px yellow inset; /* Glowing effect */
+  transform: scale(1.1); /* Slightly larger */
+  transition: transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out, border-color 0.1s ease-in-out;
+}
+
+.symbol-empty {
+  background-color: #333740; /* Slightly different for empty cells if needed */
+  border-color: #444953;
+}
