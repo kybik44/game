@@ -1,0 +1,118 @@
+{
+  "symbols": {
+    "H1": {
+      "id": "H1",
+      "name": "Brainroat",
+      "imagePath": "sprites/brainroat.png",
+      "description": "High-paying symbol. Melts your mind with its value!",
+      "tags": ["high_paying", "meme"]
+    },
+    "WILD": {
+      "id": "WILD",
+      "name": "Crocodrillo",
+      "imagePath": "sprites/crocodrillo.png",
+      "description": "Wild Symbol. Screeches wildly to substitute!",
+      "tags": ["wild", "meme"]
+    },
+    "BONUS": {
+      "id": "BONUS",
+      "name": "Bombardino",
+      "imagePath": "sprites/bombardino.png",
+      "description": "Bonus Trigger. Explosive energy for a bonus round!",
+      "tags": ["bonus_trigger", "meme"]
+    },
+    "SCATTER_FS": {
+      "id": "SCATTER_FS",
+      "name": "Tralalero",
+      "imagePath": "sprites/tralalero.png",
+      "description": "Free Spins Scatter. Triggers dancing madness!",
+      "tags": ["scatter", "free_spins", "meme"]
+    },
+    "SCATTER_MULT": {
+      "id": "SCATTER_MULT",
+      "name": "Lirili Larila",
+      "imagePath": "sprites/lirili_larila.png",
+      "description": "Multiplier/Scatter Hybrid. Sings your wins higher!",
+      "tags": ["scatter", "multiplier", "meme"]
+    },
+    "M1": {
+      "id": "M1",
+      "name": "Flying Spaghetti",
+      "imagePath": "sprites/flying_spaghetti.png",
+      "description": "Absurd filler symbol. Deliciously medium wins.",
+      "tags": ["medium_paying", "filler", "meme"]
+    },
+    "M2": {
+      "id": "M2",
+      "name": "Cursed Espresso",
+      "imagePath": "sprites/cursed_espresso.png",
+      "description": "Absurd filler symbol. Bitterly good medium payouts.",
+      "tags": ["medium_paying", "filler", "meme"]
+    },
+    "L1": {
+      "id": "L1",
+      "name": "Opera Mask",
+      "imagePath": "sprites/opera_mask.png",
+      "description": "Absurd filler symbol. Dramatically low wins.",
+      "tags": ["low_paying", "filler", "meme"]
+    }
+  },
+  "animationHooks": {
+    "defaultWin": "pulseEffect",
+    "symbolSpecific": {
+      "H1": {
+        "onWin": "brainroatMeltingAnimation",
+        "onAppear": "brainroatGlow"
+      },
+      "WILD": {
+        "onWin": "crocodrilloScreechAnimation",
+        "onAppear": "crocodrilloWiggle"
+      },
+      "BONUS": {
+        "onTrigger": "bombardinoExplosionEffect"
+      },
+      "SCATTER_FS": {
+        "onTrigger": "tralaleroDanceEffect",
+        "onLand": "tralaleroSparkle"
+      },
+      "SCATTER_MULT": {
+        "onLand": "liriliShimmer",
+        "onWinActivate": "liriliMultiplierBoost"
+      }
+    },
+    "featureEvents": {
+      "onFreeSpinsStart": "freeSpinsIntroAnimation",
+      "onFreeSpinsEnd": "freeSpinsOutroAnimation",
+      "onBonusRoundStart": "bombardinoBonusIntroAnimation",
+      "onBonusRoundEnd": "bombardinoBonusOutroAnimation",
+      "onBigWin": "bigWinCelebration",
+      "onMegaWin": "megaWinExtravaganza"
+    }
+  },
+  "audioHooks": {
+    "backgroundMusic": "sounds/main_theme.mp3",
+    "spinStart": "sounds/spin_click.wav",
+    "reelStop": ["sounds/reel_stop_1.wav", "sounds/reel_stop_2.wav", "sounds/reel_stop_3.wav", "sounds/reel_stop_4.wav", "sounds/reel_stop_5.wav"],
+    "symbolLand_H1": "sounds/brainroat_land.mp3",
+    "symbolLand_WILD": "sounds/crocodrillo_land.mp3",
+    "symbolLand_BONUS": "sounds/bombardino_land.mp3",
+    "symbolLand_SCATTER_FS": "sounds/tralalero_land.mp3",
+    "symbolLand_SCATTER_MULT": "sounds/lirili_land.mp3",
+    "winSmall": "sounds/win_small.wav",
+    "winMedium": "sounds/win_medium.wav",
+    "winLarge": "sounds/win_large.wav",
+    "freeSpinsTrigger": "sounds/TRALALERO_INCOMING.mp3",
+    "bombardinoBonusTrigger": "sounds/BOMBAAAARDINO.mp3",
+    "brainroatWin": "sounds/BRAAAAAINROAT_win.mp3"
+  },
+  "gameSettings": {
+    "defaultBet": 1.00,
+    "minBet": 0.10,
+    "maxBet": 100.00,
+    "betSteps": [0.10, 0.20, 0.50, 1.00, 2.00, 5.00, 10.00, 20.00, 50.00, 100.00],
+    "rtp_target": "~96.5%",
+    "volatility": "Medium-High",
+    "reels": [5,4],
+    "paylines": 20 
+  }
+}
