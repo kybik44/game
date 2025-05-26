@@ -1,0 +1,83 @@
+/* src/components/Controls.css */
+.controls-container {
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #3a3f47; /* Same as grid background for consistency */
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px; /* Space between control groups */
+  border: 2px solid #5a606d;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  width: fit-content;
+  max-width: 400px; /* Limit width for better layout */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.balance-bet-display {
+  display: flex;
+  justify-content: space-around; /* Space out balance and bet */
+  width: 100%;
+  font-size: 1.1em;
+}
+
+.display-item {
+  background-color: #282c34; /* Darker background for display items */
+  padding: 8px 15px;
+  border-radius: 5px;
+  border: 1px solid #5a606d;
+}
+
+.display-item .value {
+  font-weight: bold;
+  color: #61dafb; /* Accent color for values */
+  margin-left: 8px;
+}
+
+.bet-adjust-controls {
+  display: flex;
+  gap: 10px; /* Space between bet buttons */
+}
+
+.control-button {
+  padding: 10px 20px;
+  font-size: 1em;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  background-color: #61dafb; /* React blue as primary button color */
+  color: #20232a;
+}
+
+.control-button:hover {
+  background-color: #52c3e0;
+}
+
+.control-button:active {
+  transform: scale(0.95);
+}
+
+.bet-button {
+  background-color: #788190; /* Neutral color for bet adjustments */
+  color: white;
+}
+
+.bet-button:hover {
+  background-color: #68707c;
+}
+
+.spin-button {
+  min-width: 150px; /* Make spin button wider */
+  padding: 12px 25px;
+  font-size: 1.2em;
+  background-color: #4CAF50; /* Green for spin */
+  color: white;
+}
+
+.spin-button:hover {
+  background-color: #45a049;
+}

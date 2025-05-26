@@ -1,0 +1,22 @@
+/* src/components/Grid.css */
+.grid-container {
+  display: grid;
+  /* grid-template-columns: repeat(5, 1fr); */ /* Columns set dynamically by Grid.tsx */
+  /* grid-template-rows: repeat(4, 1fr); */    /* Rows set dynamically by Grid.tsx */
+  gap: 5px; /* Space between cells */
+  width: fit-content; /* Adjusts to content size */
+  margin: 20px auto; /* Center the grid */
+  padding: 10px;
+  background-color: #3a3f47; /* Slightly lighter than body for contrast */
+  border-radius: 10px;
+  border: 2px solid #5a606d;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* If a fixed size grid is desired, uncomment and adjust Symbol.css cell size accordingly */
+/*
+.grid-container {
+  width: calc(5 * 60px + 4 * 5px + 2 * 10px); // 5 symbols, 4 gaps, 2*padding
+  height: calc(4 * 60px + 3 * 5px + 2 * 10px); // 4 symbols, 3 gaps, 2*padding
+}
+*/

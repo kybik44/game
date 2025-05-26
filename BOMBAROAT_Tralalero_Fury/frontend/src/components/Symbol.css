@@ -1,0 +1,28 @@
+/* src/components/Symbol.css */
+.symbol-cell {
+  width: 60px; /* Slightly smaller for a 5x4 grid to fit common screens */
+  height: 60px;
+  border: 1px solid #ddd; /* Lighter border for dark symbols */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 24px; /* Make symbol ID more visible */
+  font-weight: bold;
+  background-color: #4a505a; /* Darker cell background */
+  color: #fff;
+  border-radius: 5px;
+  user-select: none; /* Prevent text selection */
+}
+
+/* Example placeholder styles - can be expanded */
+.symbol-s1 {
+  background-color: #ff7675; /* Reddish */
+}
+.symbol-s2 {
+  background-color: #fdcb6e; /* Yellowish */
+}
+.symbol-s3 {
+  background-color: #55efc4; /* Greenish */
+}
+
+/* Add more styles for actual game symbols (H1, L1, WILD, etc.) later */
